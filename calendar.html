@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>打手预约日历</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            padding: 40px;
+            background: #f5f7fa;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #222;
+        }
+        .wrap {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 20px;
+            width: 1300px;
+            margin: 0 auto;
+        }
+        /* 左侧简介 占1/4 */
+        .info-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px #00000010;
+        }
+        .info-box h3 {
+            margin-bottom: 12px;
+            color: #2378e8;
+        }
+        /* 右侧日历 占3/4 */
+        .calendar-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px #00000010;
+        }
+        .calendar-title {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        /* 日历网格 7列星期 */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        .week-label {
+            text-align: center;
+            font-weight: bold;
+            padding: 8px;
+            color: #666;
+        }
+        .day-item {
+            border: 1px solid #ddd;
+            height: 80px;
+            padding: 6px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .day-item:hover {
+            background: #eef6ff;
+            border-color: #2378e8;
+        }
+        .day-num {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .back-btn {
+            display: block;
+            width: 160px;
+            margin: 30px auto 0;
+            padding: 8px;
+            border: none;
+            background: #2378e8;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="titleName">打手代号：加载中</h1>
+    <div class="wrap">
+        <div class="info-box">
+            <h3>打手简介</h3>
+            <p id="descText">加载简介...</p>
+        </div>
+        <div class="calendar-box">
+            <div class="calendar-title">2026年6月</div>
+            <div class="calendar-grid" id="calWrap">
+                <!-- 星期头部 -->
+                <div class="week-label">周一</div>
+                <div class="week-label">周二</div>
+                <div class="week-label">周三</div>
+                <div class="week-label">周四</div>
+                <div class="week-label">周五</div>
+                <div class="week-label">周六</div>
+                <div class="week-label">周日</div>
+            </div>
+        </div>
+    </div>
+    <button class="back-btn" onclick="window.location.href='index.html'">返回列表</button>
+<script>
+// 获取地址参数
+const urlParams = new URLSearchParams(window.location.search);
+const code = urlParams.get("code");
+const name = urlParams.get("name");
+const desc = decodeURIComponent(urlParams.get("desc"));
+document.getElementById("titleName").innerText = `打手代号：${name}`;
+document.getElementById("descText").innerText = desc;
+// 生成当月30天日历格子
+const calWrap = document.getElementById("calWrap");
+const totalDay = 30;
+for(let d = 1; d <= totalDay; d++){
+    let div = document.createElement("div");
+    div.className = "day-item";
+    div.innerHTML = `<div class="day-num">${d}号</div>`;
+    // 点击跳转到时间表页面，传递打手代号+日期
+    div.onclick = ()=>{
+        window.location.href = `timeList.html?code=${code}&name=${name}&day=${d}`;
+    }
+    calWrap.appendChild(div);
+}
+</script>
+</body>
+</html>
