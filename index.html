@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>宸途俱乐部官网</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        html, body {
+            height: 100%;
+        }
+        body {
+            padding: 30px;
+            background-color: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+        }
+        .search-box {
+            width: 1200px;
+            margin: 0 auto 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .search-box button {
+            padding: 8px 20px;
+            background: #2378e8;
+            color: #fff;
+            border: none;
+        }
+        .container {
+            width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .list-header {
+            display: grid;
+            grid-template-columns: 60px 120px 120px 1fr 1fr 120px;
+            background: #2378e8;
+            color: white;
+            font-weight: bold;
+        }
+        .list-header div {
+            padding: 14px 10px;
+            border-right: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
+        }
+        .scroll-box {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .person-row {
+            display: grid;
+            grid-template-columns: 60px 120px 120px 1fr 1fr 120px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        .person-row:hover {
+            background-color: #eef6ff;
+        }
+        .person-row div {
+            padding: 10px 8px;
+            border-right: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .book-btn {
+            background: #2378e8;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .book-btn:hover {
+            background: #1964c9;
+        }
+        .page-box {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-top: 1px solid #eee;
+        }
+        button {
+            padding: 6px 14px;
+            border: 1px solid #dcdcdc;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        button.active {
+            background: #2378e8;
+            color: white;
+            border-color: #2378e8;
+        }
+        .jump-input {
+            width: 50px;
+            padding: 6px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-box">
+        <input id="searchInput" type="text" placeholder="输入代号/ID/单数进行搜索">
+        <button id="searchBtn">搜索</button>
+        <button id="resetBtn">重置</button>
+    </div>
+    <div class="container">
+        <div class="list-header">
+            <div>代号</div>
+            <div>ID</div>
+            <div>单数</div>
+            <div>擅长干员</div>
+            <div>擅长打法</div>
+            <div>操作</div>
+        </div>
+        <div class="scroll-box" id="scrollBox"></div>
+        <div class="page-box">
+            <button id="prevBtn">上一页</button>
+            <span id="pageBtns"></span>
+            <button id="nextBtn">下一页</button>
+            <span>跳至</span>
+            <input class="jump-input" id="jumpInput" type="number" min="1">
+            <button id="jumpBtn">跳转</button>
+            <span id="pageTip"></span>
+        </div>
+    </div>
+<script>
+const PAGE_SIZE = 12;
+let currentPage = 1;
+let searchKey = "";
+// 人员数据，新增简介字段
+const allData = [
+    {code:1,uid:"野马",single:1,goodHero:"红狼",goodTactic:"猛攻",desc:"主打突击拉扯，擅长快攻突破，上手难度低，适合新手组队。"},
+    {code:2,uid:"宸泽",single:2,goodHero:"威龙",goodTactic:"猛攻",desc:"正面抗压能力强，定点架枪稳定，多排上分首选打手。"},
+    {code:3,uid:"小蜂",single:3,goodHero:"疾风",goodTactic:"猛攻",desc:"高速游走突袭，绕后能力顶尖，适合需要快速突破的对局。"},
+    {code:4,uid:"梦想",single:4,goodHero:"骇爪",goodTactic:"猛攻",desc:"灵活拉扯消耗，持续输出稳定，中低分段乱杀。"},
+    {code:5,uid:"袁神",single:5,goodHero:"乌鲁鲁/牧羊人",goodTactic:"套狗",desc:"控场辅助专精，套狗战术熟练，保人能力极强。"},
+    {code:6,uid:"卡卡",single:6,goodHero:"待填写",goodTactic:"待填写",desc:"暂无简介，等待后台补充资料。"},
+    {code:7,uid:"待填写",single:7,goodHero:"待填写",goodTactic:"待填写",desc:"暂无简介，等待后台补充资料。"}
+];
+function getFilterData() {
+    if(!searchKey.trim()) return allData;
+    const key = searchKey.trim().toLowerCase();
+    return allData.filter(item => {
+        return item.code.toString().includes(key)
+            || item.uid.toLowerCase().includes(key)
+            || item.single.toString().includes(key);
+    })
+}
+function renderPersonList(){
+    const box = document.getElementById("scrollBox");
+    const filterList = getFilterData();
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = filterList.slice(start, start + PAGE_SIZE);
+    let htmlStr = "";
+    pageData.forEach(p => {
+        htmlStr += `
+            <div class="person-row">
+                <div>${p.code}</div>
+                <div>${p.uid}</div>
+                <div>${p.single}</div>
+                <div>${p.goodHero}</div>
+                <div>${p.goodTactic}</div>
+                <div>
+                    <button class="book-btn" data-code="${p.code}" data-desc="${encodeURIComponent(p.desc)}" data-name="${p.uid}">预约</button>
+                </div>
+            </div>
+        `;
+    })
+    box.innerHTML = htmlStr;
+    box.scrollTop = 0;
+    // 预约按钮跳转日历页面，携带参数
+    document.querySelectorAll(".book-btn").forEach(btn => {
+        btn.onclick = function(){
+            const code = this.dataset.code;
+            const name = this.dataset.name;
+            const desc = this.dataset.desc;
+            // 跳转日历页面，传参
+            window.location.href = `calendar.html?code=${code}&name=${name}&desc=${desc}`;
+        }
+    })
+}
+function renderPageButtons(){
+    const filterList = getFilterData();
+    const nowTotalPage = Math.ceil(filterList.length / PAGE_SIZE);
+    const pageWrap = document.getElementById("pageBtns");
+    let pageHtml = "";
+    let pageStart = Math.max(1, currentPage - 2);
+    let pageEnd = Math.min(nowTotalPage, pageStart + 4);
+    if(pageEnd - pageStart < 4) pageStart = Math.max(1, pageEnd - 4);
+    for(let i = pageStart; i <= pageEnd; i++){
+        pageHtml += `<button class="${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    }
+    pageWrap.innerHTML = pageHtml;
+    document.getElementById("pageTip").innerText = `共 ${nowTotalPage} 页，合计 ${filterList.length} 条记录`;
+    document.getElementById("prevBtn").disabled = currentPage === 1;
+    document.getElementById("nextBtn").disabled = currentPage === nowTotalPage;
+}
+function refreshPage() {
+    renderPersonList();
+    renderPageButtons();
+}
+document.getElementById("prevBtn").onclick = function(){
+    if(currentPage > 1){currentPage--;refreshPage();}
+}
+document.getElementById("nextBtn").onclick = function(){
+    const filterList = getFilterData();
+    const maxPage = Math.ceil(filterList.length / PAGE_SIZE);
+    if(currentPage < maxPage){currentPage++;refreshPage();}
+}
+document.getElementById("pageBtns").onclick = function(e){
+    if(e.target.tagName === "BUTTON"){
+        currentPage = Number(e.target.dataset.page);
+        refreshPage();
+    }
+}
+document.getElementById("jumpBtn").onclick = function(){
+    const input = document.getElementById("jumpInput");
+    const filterList = getFilterData();
+    const maxPage = Math.ceil(filterList.length / PAGE_SIZE);
+    let target = parseInt(input.value);
+    if(target >= 1 && target <= maxPage){
+        currentPage = target;
+        refreshPage();
+        input.value = "";
+    }else{
+        alert("无效页码！");
+    }
+}
+document.getElementById("searchBtn").onclick = function(){
+    searchKey = document.getElementById("searchInput").value;
+    currentPage = 1;
+    refreshPage();
+}
+document.getElementById("resetBtn").onclick = function(){
+    document.getElementById("searchInput").value = "";
+    searchKey = "";
+    currentPage = 1;
+    refreshPage();
+}
+refreshPage();
+</script>
+</body>
+</html>
